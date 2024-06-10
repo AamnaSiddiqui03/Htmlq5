@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Scanner</title>
+    <style>
+        .result {
+            background-color: green;
+            color: #fff;
+            padding: 20px;
+        }
+        .row {
+            display: flex;
+        }
+        .col {
+            padding: 30px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid white;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <div class="row">
+        <div class="col">
+            <div style="width:500px;" id="reader"></div>
+        </div>
+        <div class="col">
+            <h4>SCAN RESULT</h4>
+            <div id="result">Result Here</div>
+            <button id="confirmButton" onclick="confirmAttendance()" style="display:none;">Confirm Attendance</button>
+        </div>
+    </div>
+
+    <!-- Include the Html5Qrcode library from CDN without integrity attribute -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script type="text/javascript">
+        let scannedData = "";
+
+        function onScanSuccess(qrCodeMessage) {
+            scannedData = qrCodeMessage;
+            document.getElementById('result').innerHTML = '<span class="result">' + formatQRCodeData(qrCodeMessage) + '</span>';
+            document.getElementById('confirmButton').style.display = 'block';
+            html5QrcodeScanner.clear();
+        }
+
+        function onScanError(errorMessage) {
+            console.warn(`QR Code scan error: ${errorMessage}`);
+        }
+
+        function formatQRCodeData(data) {
+            const parts = data.split(', ');
+            let tableHtml = '<table><tr><th>Key</th><th>Value</th></tr>';
+            parts.forEach(part => {
+                const [key, value] = part.split(': ');
+                tableHtml += `<tr><td>${key}</td><td>${value}</td></tr>`;
+            });
+            tableHtml += '</table>';
+            return tableHtml;
+        }
+
+        function confirmAttendance() {
+            if (scannedData) {
+                google.script.run.updateAttendance(scannedData);
+                alert("Attendance confirmed!");
+                document.getElementById('result').innerHTML = 'Result Here';
+                document.getElementById('confirmButton').style.display = 'none';
+                scannedData = "";
+            }
+        }
+
+        var html5QrcodeScanner = new Html5QrcodeScanner(
+            "reader", { fps: 10, qrbox: 250 });
+        html5QrcodeScanner.render(onScanSuccess, onScanError);
+    </script>
+</body>
+</html>
